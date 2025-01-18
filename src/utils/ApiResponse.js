@@ -9,7 +9,9 @@ class ApiResponse {
 export default ApiResponse;
 
 //Ensures all API responses have a consistent format by encapsulating the response data, message, and status code in a single object. This makes it easier to handle responses in the client application and ensures a consistent user experience.
+
 //The ApiResponse class is a utility class that encapsulates the response data, message, and status code in a single object. This ensures that all API responses have a consistent format, making it easier to handle responses in the client application. The ApiResponse class provides a convenient way to create and return API responses with a standardized structure.
+
 //The ApiResponse class is typically used in Express route handlers to create and return API responses. For example:
 // import ApiResponse from "../utils/ApiResponse";
 //

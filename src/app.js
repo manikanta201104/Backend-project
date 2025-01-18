@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser"; //Imports cookieParser for handling co
 
 
 app.use(cors({
-    origin:process.env.CLIENT_URL,//This option specifies the origin that is allowed to access the server. In this case, it is set to the CLIENT_URL environment variable.
+    origin:process.env.CORS_ORIGIN,//This option specifies the origin that is allowed to access the server. In this case, it is set to the CLIENT_URL environment variable.
     credentials:true //This option allows the server to send cookies to the client.credentials: true enables cookies to be sent with cross-origin requests.
 }));
 app.use(express.json({limit:"5mb"}));//This middleware parses incoming requests with JSON payloads. It limits the payload size to 5MB.
