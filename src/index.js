@@ -5,8 +5,22 @@ dotenv.config({
     path:"./.env"
 });
 
-connectDB();
+connectDB()
+.then(() => {
+    app.on("ERROR", (error) => {
+        console.error("Application error:", error);
+        throw error;
+    });
 
+    // Start the server
+    app.listen(process.env.PORT || 5000, () => {
+        console.log(`Server is running on port ${process.env.PORT || 5000}`);
+    });
+})
+.catch((error) => {
+    console.error("MongoDB connection is failed:", error);
+    process.exit(1); // Exit with failure
+});
 
 /* The second approach is simple 
     create a folder called db and create a file called index.js and write the below code about mongoose connection
@@ -18,6 +32,7 @@ connectDB();
 this is first approach
 
 import express from "express";
+import { the } from './../node_modules/semver/internal/re';
 const app=express();
 
 (async()=>{
