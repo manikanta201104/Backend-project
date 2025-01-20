@@ -1,8 +1,11 @@
-const asyncHandler = (requestHandler) =>{ (req, res, next) =>{//
-    promise.resolve(requestHandler(req, res, next)).catch((err)=>next(err));//
-}
-}
-export default asyncHandler;
+const asyncHandler = (requestHandler) => {
+    return (req, res, next) => {
+        Promise.resolve(requestHandler(req, res, next)).catch(next);
+    };
+};
+
+export { asyncHandler };
+
 
 //In Express, handling async errors requires a try-catch block for every route. This utility eliminates repetitive error handling. It wraps the route handler in a try-catch block and passes the error to the next middleware. This way, the error can be handled in a single place.
 
