@@ -14,7 +14,7 @@ const uploadOnCloudinary=async (localFilePath) => {//The uploadOnCloudinary func
             resource_type:'auto',//The resource_type option specifies the type of resource being uploaded. In this case, it is set to auto, which allows Cloudinary to automatically detect the resource type based on the file content.
         });
         console.log('file is uploaded on cloudinary',response.url);
-        fs.unlinkSync(localFilePath)//Delete the file from the server after it has been successfully uploaded to Cloudinary.
+        // fs.unlinkSync(localFilePath)//Delete the file from the server after it has been successfully uploaded to Cloudinary.
         return response;
     } catch (error) {
         fs.unlinkSync(localFilePath) //Delete the file from the server if an error occurs during the upload process.
