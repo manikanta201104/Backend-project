@@ -147,3 +147,5 @@ const logoutUser = asyncHandler(async (req, res) => {//The logoutUser controller
 export { registerUser, loginUser, logoutUser };
 
 
+
+
