@@ -14,7 +14,7 @@ app.use(cookieParser());//This middleware parses cookies attached to the client 
 app.use(express.static("public"));//This middleware serves static files from the public directory. It allows access to files in the public directory from the client side.
 
 import userRouter from './routes/user.routes.js';//Imports the userRouter from the user.routes.js file.
-app.use("/api/users",userRouter);//This middleware uses the userRouter for routes starting with /api/users.
+app.use("/api/v1/users",userRouter);//This middleware uses the userRouter for routes starting with /api/users.
 
 
 export default app;//Exports the app instance for use in other files.
