@@ -4,14 +4,18 @@ import User from '../models/user.models.js';
 import uploadOnCloudinary from '../utils/cloudinary.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import ApiError from './../utils/ApiError';
+import jwt  from 'jsonwebtoken';
+import ApiResponse from './../utils/ApiResponse';
 
 const generateAccessandRefreshTokens=async (userId) => {//The generateAccessandRefreshTokens function takes the user ID as an argument and returns the access and refresh tokens for the user. The function first finds the user in the database using the user ID. It then generates the access and refresh tokens for the user using the generateAccessToken and generateRefreshToken methods on the user object. The refresh token is saved to the database and the access and refresh tokens are returned.
     try {
         const user = await User.findById(userId);
         const accessToken = user.generateAccessToken();
         const refreshToken = user.generateRefreshToken();//The generateAccessToken and generateRefreshToken methods are defined in the user model. The generateAccessToken method generates a JWT access token for the user, which contains the user's ID, email, username, and full name. The generateRefreshToken method generates a JWT refresh token for the user, which contains only the user's ID.
+        
         user.refreshToken = refreshToken;
         await user.save({ validateBeforeSave: false });//The refresh token is saved to the database by updating the user object with the new refresh token. The validateBeforeSave option is set to false to skip validation before saving the user object.
+        
         return { accessToken, refreshToken };
     } catch (error) {
         throw new ApiError(500, "Error generating tokens");
@@ -83,7 +87,7 @@ const loginUser=asyncHandler(async (req,res)=>{//read Readme.md
 
     const {email,username,password}=req.body;//The login controller function is similar to the registerUser controller function. It takes the email or username and password from the request body.
 
-    if(!email||!username){//The email or username is required to login. If the email or username is not provided, an error is thrown.
+    if(!(email||username)){//The email or username is required to login. If the email or username is not provided, an error is thrown.
         throw new ApiError(400,"Please provide email or username");
     }
 
@@ -121,7 +125,7 @@ const loginUser=asyncHandler(async (req,res)=>{//read Readme.md
 })
 
 const logoutUser = asyncHandler(async (req, res) => {//The logoutUser controller function is used to log out the user by clearing the access and refresh tokens from the cookies and setting the refresh token to undefined in the database. The function first finds the user in the database using the user ID from the request object. It then updates the user object to set the refresh token to undefined. Finally, it clears the access and refresh tokens from the cookies and returns a success response. If an error occurs during the process, an error response is returned. The function is exported to be used in the user routes. 
-    await user.findByIdAndUpdate(req.user._id,{
+    await User.findByIdAndUpdate(req.user._id,{
         $set:{
             refreshToken:undefined
         }
@@ -143,8 +147,49 @@ const logoutUser = asyncHandler(async (req, res) => {//The logoutUser controller
 
 });
 
+const refreshAccessToken=asyncHandler (async (req,res)=>{
+    const incomingRefreshToken=req.cookies.refreshToken||req.body.refreshToken
+    
+    if (!incomingRefreshToken) {
+        throw new ApiError(400,"Unothrized request");
+    }
 
-export { registerUser, loginUser, logoutUser };
+    try {
+        const decodedToken=jwt.verify(incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        )
+
+        const user=await User.findById(decodedToken?._id)
+
+        if(!user){
+            throw new ApiError(401,"Invalid refresh Token")
+        }
+        if(incomingRefreshToken!==user?.refreshToken){
+            throw new ApiError(401,"Refresh token is expired or used")
+        }
+        const options={
+            httpOnly:true,
+            secure:true
+        }
+
+        const{accessToken,newRefreshToken}=await generateAccessandRefreshTokens(user._id)
+
+        return res.status(200)
+        .cookie("accessToken",accessToken,options)
+        .cookie("refreshToken",newRefreshToken,options)
+        .json(
+            new ApiResponse(200,
+                {accessToken,refreshToken:new RefreshToken},
+                "Access Token Refreshed"
+            )
+        )
+    } catch (error) {
+        throw new ApiError(401,error?.message||"Invalid refresh token");
+        
+    }
+})
+
+export { registerUser, loginUser, logoutUser,refreshAccessToken };
 
 
 
