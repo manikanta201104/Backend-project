@@ -3,7 +3,7 @@ class ApiResponse {
     this.data = data;//The data property contains the response data. It can be any type of data, such as an object, array, or string.
     this.message = message;//The message property contains a descriptive message about the response. It is typically used to provide additional context or information about the response.
     this.statusCode = statusCode;//The statusCode property contains the HTTP status code of the response. It indicates the success or failure of the request.
-    this.success = statusCode >= 200 && statusCode < 300;//The success property is a boolean value that indicates whether the response was successful. It is determined based on the status code of the response.
+    this.success = statusCode < 400;//The success property is a boolean value that indicates whether the response was successful. It is determined based on the status code of the response.
   }
 }
 export default ApiResponse;
