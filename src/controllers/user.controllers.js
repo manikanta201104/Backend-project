@@ -3,9 +3,8 @@ import ApiError from '../utils/ApiError.js';
 import User from '../models/user.models.js';
 import uploadOnCloudinary from '../utils/cloudinary.js';
 import ApiResponse from '../utils/ApiResponse.js';
-import ApiError from './../utils/ApiError';
 import jwt  from 'jsonwebtoken';
-import ApiResponse from './../utils/ApiResponse';
+import mongoose from 'mongoose';
 
 const generateAccessandRefreshTokens=async (userId) => {//The generateAccessandRefreshTokens function takes the user ID as an argument and returns the access and refresh tokens for the user. The function first finds the user in the database using the user ID. It then generates the access and refresh tokens for the user using the generateAccessToken and generateRefreshToken methods on the user object. The refresh token is saved to the database and the access and refresh tokens are returned.
     try {
@@ -277,76 +276,123 @@ const updateCoverImage=asyncHandler(async(req,res)=>{
     .json(new ApiResponse(200,'updated coverimage successfully'))
 })
 
-const getUserChannelProfile=asyncHandler(async(req,res)=>{
-    const{username}=req.params
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params;
 
-    if(!username?.trim()){
-        throw new ApiError(400,"Username is missing")
+    if (!username?.trim()) {
+        throw new ApiError(400, "Username is missing");
     }
 
-    const channel=await User.aggregate([
+    const channel = await User.aggregate([
         {
-            $match:{
-                username:username?.toLowerCase()
+            $match: {
+                username: username.toLowerCase()
             }
         },
         {
-            $lookup:{
-                from:'subscriptions',
-                localField:'_id',
-                foreignField:'channel',
-                as:'subscribers',
+            $lookup: {
+                from: 'subscriptions',
+                localField: '_id',
+                foreignField: 'channel',
+                as: 'subscribers',
             }
         },
         {
-            $lookup:{
-                from:'subscriptions',
-                localField:'_id',
-                foreignField:'subscriber',
-                as:'subscribedTo'
+            $lookup: {
+                from: 'subscriptions',
+                localField: '_id',
+                foreignField: 'subscriber',
+                as: 'subscribedTo'
             }
         },
         {
-            $addFields:{
-                subscibersCount:{
-                    $size:'$subscribers'
-                },
-                channelSubscribedToCount:{
-                    $size:'subscribedTo'
-                },
-                isSubscribed:{
-                    $cond:{
-                        if:{$in:[req.user?._id,'subscribers.subscriber']}
+            $addFields: {
+                subscribersCount: { $size: '$subscribers' },  // Fixed spelling from "subscibersCount"
+                channelSubscribedToCount: { $size: '$subscribedTo' },
+                isSubscribed: {
+                    $cond: {
+                        if: { $in: [req.user?._id, '$subscribers.subscriber'] },
+                        then: true,
+                        else: false
                     }
                 }
             }
         },
         {
-            $project:{
-                fullName:1,
-                username:1,
-                email:1,
-                coverImage:1,
-                avatar:1,
-                subscibersCount:1,
-                channelSubscribedToCount:1,
-                isSubscribed:1,
+            $project: {
+                fullName: 1,
+                username: 1,
+                email: 1,
+                coverImage: 1,
+                avatar: 1,
+                subscribersCount: 1,  // Fixed spelling
+                channelSubscribedToCount: 1,
+                isSubscribed: 1
             }
         }
-    ])
-    
-    if(!channel?.length){
-        throw new ApiError(400,"Channel doesnot exists");
+    ]);
+
+    if (!channel.length) {
+        throw new ApiError(400, "Channel does not exist");
     }
 
-    return res
-    .status(200)
-    .json(new ApiResponse(200,channel[0],'User channel fecthed successfully'))
-})
+    return res.status(200).json(new ApiResponse(200, channel[0], 'User channel fetched successfully'));
+});
+const getWatchHistory = asyncHandler(async (req, res) => {
+    // Ensure req.user._id exists and is valid
+    if (!req.user || !req.user._id) {
+      return res.status(400).json({ message: 'User not authenticated or invalid user ID' });
+    }
+  
+    const objectId = mongoose.Types.ObjectId.createFromHexString(req.user._id);
+  
+    const user = await User.aggregate([
+      {
+        $match: { _id: objectId }
+      },
+      {
+        $lookup: {
+          from: 'videos',
+          localField: 'watchHistory',
+          foreignField: '_id',
+          as: 'watchHistory',
+          pipeline: [
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'owner',
+                foreignField: '_id',
+                as: 'owner',
+                pipeline: [
+                  {
+                    $project: {
+                      username: 1,
+                      fullName: 1,
+                      avatar: 1,
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              $addFields: {
+                owner: { $first: '$owner' }
+              }
+            }
+          ]
+        }
+      }
+    ]);
+  
+    if (!user.length) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+  
+    return res.status(200)
+      .json(new ApiResponse(200, user[0].watchHistory, 'Watch history fetched successfully'));
+  });
 
-
-
-export { registerUser, loginUser, logoutUser,refreshAccessToken, changeCurrentPassowrd, getCurrentUser, updateAccountDetails, updateUserAvatar, updateCoverImage , getUserChannelProfile};
+export { registerUser, loginUser, logoutUser,refreshAccessToken, changeCurrentPassowrd, getCurrentUser, updateAccountDetails, updateUserAvatar, updateCoverImage , getUserChannelProfile, getWatchHistory};
 
 
 

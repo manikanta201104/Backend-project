@@ -1,8 +1,19 @@
 import { Router } from 'express';
-import { registerUser,loginUser,logoutUser,refreshAccessToken } from '../controllers/user.controllers.js';
+import { 
+   registerUser,
+   loginUser,
+   logoutUser,
+   refreshAccessToken, 
+   changeCurrentPassowrd, 
+   getCurrentUser, 
+   updateAccountDetails, 
+   updateUserAvatar, 
+   updateCoverImage, 
+   getUserChannelProfile, 
+   getWatchHistory 
+} from '../controllers/user.controllers.js';
 import {upload} from '../middlewares/multer.middleware.js';
 import { verifyJWT } from '../middlewares/auth.middlewares.js';
-import router from './user.routes';
 
 const router = Router()
 
@@ -16,6 +27,16 @@ router.route('/register').post(
 
 router.route('/login').post(loginUser);
 router.route('/logout').post(verifyJWT,logoutUser);//The logout route is protected by the verifyJWT middleware. This ensures that only authenticated users can log out. The logoutUser controller function is called when the user logs out. The user's refresh token is removed from the database, and the user is logged out. The user is then redirected to the login page. The logout route is a POST request that requires the user to be authenticated. The verifyJWT middleware is used to verify the user's access token before allowing them to log out. If the user is authenticated, the logoutUser controller function is called to log the user out. The user's refresh token is removed from the database, and the user is redirected to the login page. 
+
+
 router.route('/refresh-token').post(refreshAccessToken)
+router.route('/change-password').post(verifyJWT,changeCurrentPassowrd)
+router.route('/current-user').get(verifyJWT,getCurrentUser)
+router.route('/update-account').patch(verifyJWT,updateAccountDetails)
+router.route('/avatar').patch(verifyJWT,upload.single('avatar'),updateUserAvatar)
+router.route('/cover-image').patch(verifyJWT,upload.single('/coverImage'),updateCoverImage)
+router.route('/c/:username').get(verifyJWT,getUserChannelProfile)
+router.route('/history').get(verifyJWT,getWatchHistory)
+
 export default router;
 
